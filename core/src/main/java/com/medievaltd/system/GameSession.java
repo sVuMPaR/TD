@@ -4,9 +4,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.medievaltd.entity.Enemy;
 import com.medievaltd.entity.Projectile;
 import com.medievaltd.entity.Tower;
-import com.medievaltd.model.BuildSpot;
-import com.medievaltd.model.GameLevel;
-import com.medievaltd.model.TowerType;
+import com.medievaltd.model.*;
+import com.medievaltd.util.Assets;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,6 +15,7 @@ public class GameSession {
     public enum Result { PLAYING, VICTORY, DEFEAT }
 
     private final GameLevel level;
+    private final Difficulty difficulty;
     private final Vector2[] path;
     private final List<BuildSpot> buildSpots;
     private final List<Tower> towers = new ArrayList<>();
@@ -27,19 +27,20 @@ public class GameSession {
     private int lives;
     private Result result = Result.PLAYING;
 
-    public GameSession(GameLevel level) {
+    public GameSession(GameLevel level, Difficulty difficulty) {
         this.level = level;
+        this.difficulty = difficulty;
         this.path = level.getPathPoints();
         this.buildSpots = new ArrayList<>();
         for (BuildSpot spot : level.buildSpots) {
             buildSpots.add(new BuildSpot(spot.x, spot.y));
         }
-        this.gold = level.startingGold;
-        this.lives = level.startingLives;
-        this.waveManager = new WaveManager(level);
+        this.gold = difficulty.adjustGold(level.startingGold);
+        this.lives = difficulty.baseLives;
+        this.waveManager = new WaveManager(level, difficulty);
     }
 
-    public void update(float delta, com.medievaltd.util.Assets assets) {
+    public void update(float delta, Assets assets) {
         if (result != Result.PLAYING) return;
 
         List<Enemy> spawnQueue = new ArrayList<>();
@@ -47,7 +48,16 @@ public class GameSession {
         enemies.addAll(spawnQueue);
 
         for (Tower tower : towers) {
-            tower.update(delta, enemies, projectiles, path, assets);
+            float dmgBonus = 0, spdBonus = 0;
+            for (Tower t : towers) {
+                if (t.getType() == TowerType.TEMPLE && t != tower) {
+                    if (t.getPosition().dst(tower.getPosition()) <= t.getRange()) {
+                        dmgBonus += t.getTempleDamageBonus();
+                        spdBonus += t.getTempleSpeedBonus();
+                    }
+                }
+            }
+            tower.update(delta, enemies, projectiles, path, assets, dmgBonus, spdBonus);
         }
 
         for (Enemy enemy : enemies) {
@@ -62,10 +72,7 @@ public class GameSession {
             if (enemy.hasReachedEnd()) {
                 lives -= enemy.getType().damageToBase;
                 it.remove();
-                if (lives <= 0) {
-                    lives = 0;
-                    result = Result.DEFEAT;
-                }
+                if (lives <= 0) { lives = 0; result = Result.DEFEAT; }
             } else if (!enemy.isAlive()) {
                 gold += enemy.getType().goldReward;
                 it.remove();
@@ -82,45 +89,71 @@ public class GameSession {
         while (it.hasNext()) {
             Projectile p = it.next();
             p.update(delta);
-            if (!p.isActive()) {
-                it.remove();
-                continue;
-            }
+            if (!p.isActive()) { it.remove(); continue; }
 
-            boolean hit = false;
+            List<Enemy> hitEnemies = new ArrayList<>();
+
             for (Enemy enemy : enemies) {
                 if (!enemy.isAlive()) continue;
-                Vector2 enemyPos = enemy.getPosition(path, new Vector2());
+                Vector2 ePos = enemy.getPosition(path, new Vector2());
+                float hitRadius = p.getSplashRadius() > 0 ? p.getSplashRadius() : 20f;
 
-                if (p.getKind() == Projectile.Kind.CANNONBALL) {
-                    if (p.getPosition().dst(enemyPos) <= p.getSplashRadius()) {
-                        applyProjectileHit(p, enemy);
-                        hit = true;
-                    }
-                } else if (p.getPosition().dst(enemyPos) <= 20f) {
-                    applyProjectileHit(p, enemy);
-                    hit = true;
-                    break;
+                if (p.getPosition().dst(ePos) <= hitRadius) {
+                    hitEnemies.add(enemy);
+                    if (!p.isPiercing() && p.getSplashRadius() <= 0) break;
                 }
             }
 
-            if (hit) {
+            if (!hitEnemies.isEmpty()) {
+                for (Enemy enemy : hitEnemies) {
+                    applyProjectileHit(p, enemy);
+                }
+
+                if (p.isChaining()) {
+                    handleChainLightning(p, hitEnemies.get(0), 2);
+                }
+
                 p.deactivate();
                 it.remove();
             }
         }
     }
 
+    private void handleChainLightning(Projectile p, Enemy first, int bounces) {
+        Enemy current = first;
+        for (int i = 0; i < bounces; i++) {
+            Enemy next = null;
+            float bestDist = 120f;
+            Vector2 curPos = current.getPosition(path, new Vector2());
+            for (Enemy enemy : enemies) {
+                if (!enemy.isAlive() || enemy == current) continue;
+                Vector2 ePos = enemy.getPosition(path, new Vector2());
+                float d = curPos.dst(ePos);
+                if (d < bestDist) {
+                    bestDist = d;
+                    next = enemy;
+                }
+            }
+            if (next == null) break;
+            next.takeDamage(p.getDamage() / 2, p.getDamageType());
+            current = next;
+        }
+    }
+
     private void applyProjectileHit(Projectile p, Enemy enemy) {
-        enemy.takeDamage(p.getDamage());
-        if (p.getKind() == Projectile.Kind.MAGIC) {
-            enemy.applySlow(0.5f, 2f);
+        enemy.takeDamage(p.getDamage(), p.getDamageType());
+        if (p.getDamageType() == DamageType.ICE) {
+            enemy.applySlow(0.4f, 2.5f);
+        }
+        if (p.getDamageType() == DamageType.FIRE) {
+            enemy.applyDot(8f, 3f);
         }
     }
 
     public boolean placeTower(BuildSpot spot, TowerType type) {
-        if (spot.occupied || gold < type.baseCost) return false;
-        gold -= type.baseCost;
+        int cost = type.freeToPlace ? 0 : type.baseCost;
+        if (spot.occupied || gold < cost) return false;
+        gold -= cost;
         spot.occupied = true;
         towers.add(new Tower(type, spot.x, spot.y));
         return true;
@@ -147,11 +180,10 @@ public class GameSession {
         return towers.remove(tower);
     }
 
-    public void startWave() {
-        waveManager.startNextWave();
-    }
+    public void startWave() { waveManager.startNextWave(); }
 
     public GameLevel getLevel() { return level; }
+    public Difficulty getDifficulty() { return difficulty; }
     public Vector2[] getPath() { return path; }
     public List<BuildSpot> getBuildSpots() { return buildSpots; }
     public List<Tower> getTowers() { return towers; }

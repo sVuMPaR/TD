@@ -1,18 +1,18 @@
 package com.medievaltd.system;
 
 import com.medievaltd.entity.Enemy;
+import com.medievaltd.model.Difficulty;
 import com.medievaltd.model.GameLevel;
 import com.medievaltd.model.SpawnEntry;
 import com.medievaltd.model.WaveDefinition;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 public class WaveManager {
     public enum State { WAITING, SPAWNING, COMPLETE, ALL_COMPLETE }
 
     private final List<WaveDefinition> waves;
+    private final Difficulty difficulty;
     private int currentWaveIndex = -1;
     private State state = State.WAITING;
     private float spawnTimer;
@@ -20,8 +20,9 @@ public class WaveManager {
     private int spawnedInGroup;
     private float waveDelayTimer;
 
-    public WaveManager(GameLevel level) {
+    public WaveManager(GameLevel level, Difficulty difficulty) {
         this.waves = level.waves;
+        this.difficulty = difficulty;
     }
 
     public void startNextWave() {
@@ -42,9 +43,7 @@ public class WaveManager {
 
         if (state == State.COMPLETE) {
             waveDelayTimer -= delta;
-            if (waveDelayTimer <= 0) {
-                state = State.WAITING;
-            }
+            if (waveDelayTimer <= 0) state = State.WAITING;
             return;
         }
 
@@ -58,37 +57,26 @@ public class WaveManager {
         }
 
         SpawnEntry entry = wave.spawns.get(spawnGroupIndex);
+        int adjustedCount = difficulty.adjustCount(entry.count);
         spawnTimer -= delta;
-        if (spawnTimer <= 0 && spawnedInGroup < entry.count) {
-            spawnQueue.add(new Enemy(entry.type));
+
+        if (spawnTimer <= 0 && spawnedInGroup < adjustedCount) {
+            int hp = difficulty.adjustHealth(entry.type.maxHealth);
+            spawnQueue.add(new Enemy(entry.type, hp));
             spawnedInGroup++;
             spawnTimer = entry.interval;
         }
 
-        if (spawnedInGroup >= entry.count) {
+        if (spawnedInGroup >= adjustedCount) {
             spawnGroupIndex++;
             spawnedInGroup = 0;
             spawnTimer = 0.5f;
         }
     }
 
-    public int getCurrentWaveNumber() {
-        return currentWaveIndex + 1;
-    }
-
-    public int getTotalWaves() {
-        return waves.size();
-    }
-
-    public State getState() {
-        return state;
-    }
-
-    public boolean canStartWave() {
-        return state == State.WAITING && currentWaveIndex + 1 < waves.size();
-    }
-
-    public boolean isAllComplete() {
-        return state == State.ALL_COMPLETE;
-    }
+    public int getCurrentWaveNumber() { return currentWaveIndex + 1; }
+    public int getTotalWaves() { return waves.size(); }
+    public State getState() { return state; }
+    public boolean canStartWave() { return state == State.WAITING && currentWaveIndex + 1 < waves.size(); }
+    public boolean isAllComplete() { return state == State.ALL_COMPLETE; }
 }

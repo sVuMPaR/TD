@@ -1,29 +1,52 @@
 package com.medievaltd.model;
 
-import com.badlogic.gdx.math.Vector2;
-
 public enum TowerType {
-    ARCHER("Лучники", 80, 1.0f, 120f, 12, "Быстрая стрельба по одной цели"),
-    ARTILLERY("Артиллерия", 150, 2.5f, 100f, 35, "Мощный урон по области"),
-    MAGIC("Магия", 120, 1.8f, 110f, 18, "Замедляет и наносит магический урон");
+    ARCHER("Лучники", 80, 1.0f, 120f, 12, DamageType.PHYSICAL,
+        "Быстрая стрельба по одной цели", false),
+    ARTILLERY("Артиллерия", 150, 2.5f, 100f, 35, DamageType.PHYSICAL,
+        "Мощный урон по области", false),
+    BALLISTA("Баллиста", 130, 2.0f, 140f, 28, DamageType.PHYSICAL,
+        "Пробивает нескольких врагов", false),
+    MAGIC("Магия", 120, 1.8f, 110f, 18, DamageType.MAGIC,
+        "Универсальный магический урон", false),
+    FIRE_MAGIC("Огонь", 140, 2.0f, 100f, 14, DamageType.FIRE,
+        "Поджигает — урон со временем", false),
+    ICE_MAGIC("Лёд", 140, 2.2f, 105f, 12, DamageType.ICE,
+        "Заморозка области, замедление", false),
+    LIGHTNING_MAGIC("Молния", 160, 1.6f, 115f, 22, DamageType.LIGHTNING,
+        "Цепная молния (3 цели)", false),
+    ICE_TOWER("Ледяная башня", 110, 2.5f, 95f, 8, DamageType.ICE,
+        "AoE заморозка, сильное замедление", false),
+    BARRACKS("Казарма", 100, 0f, 60f, 0, DamageType.PHYSICAL,
+        "Воины блокируют врагов на пути", false),
+    TEMPLE("Храм", 0, 0f, 120f, 0, DamageType.PHYSICAL,
+        "Бафф соседних башен (бесплатно)", true);
 
     public final String displayName;
     public final int baseCost;
     public final float baseFireRate;
     public final float baseRange;
     public final int baseDamage;
+    public final DamageType damageType;
     public final String description;
+    public final boolean freeToPlace;
 
-    TowerType(String displayName, int baseCost, float baseFireRate, float baseRange, int baseDamage, String description) {
+    TowerType(String displayName, int baseCost, float baseFireRate, float baseRange,
+              int baseDamage, DamageType damageType, String description, boolean freeToPlace) {
         this.displayName = displayName;
         this.baseCost = baseCost;
         this.baseFireRate = baseFireRate;
         this.baseRange = baseRange;
         this.baseDamage = baseDamage;
+        this.damageType = damageType;
         this.description = description;
+        this.freeToPlace = freeToPlace;
     }
 
     public int upgradeCost(int level) {
+        if (this == TEMPLE) {
+            return 60 + level * 40;
+        }
         return (int) (baseCost * (0.6f + level * 0.5f));
     }
 
@@ -36,6 +59,7 @@ public enum TowerType {
     }
 
     public float fireRateAtLevel(int level) {
+        if (baseFireRate <= 0) return 0;
         return baseFireRate * (1f - (level - 1) * 0.08f);
     }
 
@@ -45,5 +69,15 @@ public enum TowerType {
             total += upgradeCost(i);
         }
         return total / 2;
+    }
+
+    public boolean isElementalMagic() {
+        return this == FIRE_MAGIC || this == ICE_MAGIC || this == LIGHTNING_MAGIC;
+    }
+
+    public boolean isAvailableAtLevel(int mapLevel) {
+        if (isElementalMagic()) return mapLevel >= 3;
+        if (this == MAGIC) return mapLevel < 3;
+        return true;
     }
 }
