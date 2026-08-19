@@ -19,10 +19,15 @@ public class WaveManager {
     private int spawnedInGroup;
     private float waveDelayTimer;
 
+    private final boolean isSurvival;
+    private final int mapIndex;
+
     public WaveManager(GameLevel level, Difficulty difficulty) {
         this.waves = level.generateWaves(difficulty);
         this.difficulty = difficulty;
         this.rng = new Random(level.mapIndex * 7919L);
+        this.isSurvival = level.mapIndex == 99;
+        this.mapIndex = level.mapIndex;
     }
 
     public void startNextWave() {
@@ -66,6 +71,12 @@ public class WaveManager {
             if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 3.5f);
             else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 8f);
             else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 15f);
+
+            // Survival scaling: +35% HP per 10-wave phase
+            if (isSurvival) {
+                int phase = (currentWaveIndex) / 10;
+                hp = (int) (hp * (1f + phase * 0.35f));
+            }
 
             Resistances res = WaveGenerator.generateResistances(entry.role, difficulty, rng);
             // Merge with base type resistances

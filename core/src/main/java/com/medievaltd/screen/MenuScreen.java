@@ -122,6 +122,10 @@ public class MenuScreen extends ScreenAdapter {
         font.draw(batch, "Монет науки: " + game.getResearch().getGold(), 900, 175);
         font.setColor(GameColors.UI_TEXT);
         font.draw(batch, "Исследования →", 900, 150);
+
+        // Survival mode button
+        font.setColor(GameColors.UI_GOLD);
+        font.draw(batch, "ВЫЖИВАНИЕ (100 волн) →", 60, 115);
         batch.end();
 
         if (Gdx.input.justTouched()) {
@@ -140,6 +144,10 @@ public class MenuScreen extends ScreenAdapter {
             // Research button area
             if (pos.x >= 900 && pos.x <= 1220 && pos.y >= 130 && pos.y <= 180) {
                 game.openResearch();
+            }
+            // Survival mode
+            if (pos.x >= 60 && pos.x <= 380 && pos.y >= 95 && pos.y <= 125) {
+                game.startSurvival(selectedDifficulty);
             }
         }
     }

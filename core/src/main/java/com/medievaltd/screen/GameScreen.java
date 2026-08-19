@@ -15,6 +15,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.medievaltd.MedievalTDGame;
 import com.medievaltd.entity.Tower;
 import com.medievaltd.model.*;
+import com.medievaltd.model.SurvivalMap;
 import com.medievaltd.system.GameSession;
 import com.medievaltd.util.GameColors;
 
@@ -51,7 +52,7 @@ public class GameScreen extends ScreenAdapter {
 
     public GameScreen(MedievalTDGame game, int levelIndex, Difficulty difficulty) {
         this.game = game;
-        GameLevel level = GameLevel.createLevels().get(levelIndex);
+        GameLevel level = levelIndex < 0 ? SurvivalMap.create() : GameLevel.createLevels().get(levelIndex);
         this.session = new GameSession(level, difficulty, game.getResearch());
         this.mapLevel = level.mapIndex;
         this.font = game.createFont(16);

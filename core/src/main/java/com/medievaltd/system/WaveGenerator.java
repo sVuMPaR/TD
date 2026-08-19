@@ -37,7 +37,21 @@ public class WaveGenerator {
         EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WYVERN, EnemyType.DRAGON
     };
 
+    // Survival mode uses all enemy types, rotating through phases
+    private static final EnemyType[] ALL_ENEMIES = EnemyType.values();
+    private static final EnemyType[] ALL_BOSSES = {
+        EnemyType.DRAGON, EnemyType.GOLEM, EnemyType.WYVERN,
+        EnemyType.KNIGHT, EnemyType.DARK_MAGE
+    };
+
     public static List<WaveDefinition> generate(int totalWaves, int mapIndex, Difficulty difficulty) {
+        if (mapIndex == 99) {
+            return generateSurvival(totalWaves, difficulty);
+        }
+        return generateCampaign(totalWaves, mapIndex, difficulty);
+    }
+
+    private static List<WaveDefinition> generateCampaign(int totalWaves, int mapIndex, Difficulty difficulty) {
         Random rng = new Random(mapIndex * 1000L + difficulty.ordinal());
         List<WaveDefinition> waves = new ArrayList<>();
         int poolIdx = Math.max(0, Math.min(mapIndex - 1, MAP_ENEMY_POOLS.length - 1));
@@ -61,33 +75,74 @@ public class WaveGenerator {
             if (progress > 0.25f && enemyPool.length > 1) {
                 EnemyType second;
                 int attempts = 0;
-                do {
-                    second = enemyPool[rng.nextInt(enemyPool.length)];
-                    attempts++;
-                } while (second == mainType && attempts < 5);
-                if (second != mainType) {
-                    spawns.add(new SpawnEntry(second, baseCount / 2, 0.7f));
-                }
+                do { second = enemyPool[rng.nextInt(enemyPool.length)]; attempts++; }
+                while (second == mainType && attempts < 5);
+                if (second != mainType) spawns.add(new SpawnEntry(second, baseCount / 2, 0.7f));
             }
 
             if (isMiniBossWave) {
-                EnemyType mb = miniBossPool[rng.nextInt(miniBossPool.length)];
-                spawns.add(new SpawnEntry(mb, 1, 0f, EnemyRole.MINI_BOSS));
+                spawns.add(new SpawnEntry(miniBossPool[rng.nextInt(miniBossPool.length)], 1, 0f, EnemyRole.MINI_BOSS));
             }
-
             if (isBossWave && !isFinalWave) {
-                EnemyType bt = bossPool[rng.nextInt(bossPool.length)];
-                spawns.add(new SpawnEntry(bt, 1, 0f, EnemyRole.BOSS));
+                spawns.add(new SpawnEntry(bossPool[rng.nextInt(bossPool.length)], 1, 0f, EnemyRole.BOSS));
             }
-
             if (isFinalWave) {
                 spawns.add(new SpawnEntry(finalBossType, 1, 0f, EnemyRole.FINAL_BOSS));
             }
 
-            float delay = isBossWave || isFinalWave ? 6f : 4f;
-            waves.add(new WaveDefinition(w, spawns, delay));
+            waves.add(new WaveDefinition(w, spawns, isBossWave || isFinalWave ? 6f : 4f));
         }
+        return waves;
+    }
 
+    private static List<WaveDefinition> generateSurvival(int totalWaves, Difficulty difficulty) {
+        Random rng = new Random(42L + difficulty.ordinal());
+        List<WaveDefinition> waves = new ArrayList<>();
+
+        for (int w = 1; w <= totalWaves; w++) {
+            boolean isBossWave = (w % 5 == 0);
+            boolean isFinalWave = (w == totalWaves);
+            boolean isMiniBossWave = !isBossWave && !isFinalWave;
+
+            // Scaling: enemies get harder every 10 waves
+            int phase = (w - 1) / 10; // 0..9
+            float scaleFactor = 1f + phase * 0.35f;
+
+            List<SpawnEntry> spawns = new ArrayList<>();
+
+            // Enemy count scales with wave
+            int baseCount = 6 + w / 4;
+            int typeCount = Math.min(1 + phase, 4);
+
+            // Pick enemies from expanding pool
+            List<EnemyType> available = new ArrayList<>();
+            for (int i = 0; i < ALL_ENEMIES.length && available.size() < 3 + phase; i++) {
+                available.add(ALL_ENEMIES[(i + phase * 3) % ALL_ENEMIES.length]);
+            }
+
+            for (int t = 0; t < typeCount && t < available.size(); t++) {
+                int count = t == 0 ? baseCount : baseCount / 2;
+                float interval = Math.max(0.25f, 0.7f - phase * 0.04f);
+                spawns.add(new SpawnEntry(available.get(t), count, interval));
+            }
+
+            if (isMiniBossWave) {
+                EnemyType mb = ALL_BOSSES[rng.nextInt(ALL_BOSSES.length)];
+                spawns.add(new SpawnEntry(mb, 1, 0f, EnemyRole.MINI_BOSS));
+            }
+            if (isBossWave && !isFinalWave) {
+                EnemyType boss = ALL_BOSSES[rng.nextInt(ALL_BOSSES.length)];
+                int bossCount = 1 + phase / 4; // multiple bosses in late waves
+                spawns.add(new SpawnEntry(boss, bossCount, 1.5f, EnemyRole.BOSS));
+            }
+            if (isFinalWave) {
+                spawns.add(new SpawnEntry(EnemyType.DRAGON, 1, 0f, EnemyRole.FINAL_BOSS));
+                spawns.add(new SpawnEntry(EnemyType.GOLEM, 2, 1f, EnemyRole.BOSS));
+                spawns.add(new SpawnEntry(EnemyType.WYVERN, 2, 1f, EnemyRole.BOSS));
+            }
+
+            waves.add(new WaveDefinition(w, spawns, isBossWave || isFinalWave ? 6f : 3.5f));
+        }
         return waves;
     }
 

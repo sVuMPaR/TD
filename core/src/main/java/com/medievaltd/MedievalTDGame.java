@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.medievaltd.model.Difficulty;
+import com.medievaltd.model.SurvivalMap;
 import com.medievaltd.research.ResearchState;
 import com.medievaltd.screen.GameScreen;
 import com.medievaltd.screen.MenuScreen;
@@ -44,6 +45,10 @@ public class MedievalTDGame extends Game {
 
     public void startGame(int levelIndex, Difficulty difficulty) {
         setScreen(new GameScreen(this, levelIndex, difficulty));
+    }
+
+    public void startSurvival(Difficulty difficulty) {
+        setScreen(new GameScreen(this, -1, difficulty));
     }
 
     public void returnToMenu() {
