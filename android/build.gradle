@@ -1,0 +1,69 @@
+android {
+    namespace 'com.medievaltd.android'
+    compileSdk 34
+    sourceSets {
+        main {
+            manifest.srcFile 'AndroidManifest.xml'
+            java.srcDirs = ['src/main/java']
+            aidl.srcDirs = ['src/main/java']
+            renderscript.srcDirs = ['src/main/java']
+            res.srcDirs = ['res']
+            assets.srcDirs = ['../assets']
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/robovm/ios/robovm.xml']
+        }
+    }
+    defaultConfig {
+        applicationId 'com.medievaltd.android'
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.register('copyAndroidNatives') {
+    doFirst {
+        file('libs/armeabi-v7a/').mkdirs()
+        file('libs/arm64-v8a/').mkdirs()
+        file('libs/x86/').mkdirs()
+        file('libs/x86_64/').mkdirs()
+
+        configurations.natives.copy().files.each { jar ->
+            def outputDir = null
+            if (jar.name.endsWith('natives-arm64-v8a.jar')) outputDir = file('libs/arm64-v8a')
+            if (jar.name.endsWith('natives-armeabi-v7a.jar')) outputDir = file('libs/armeabi-v7a')
+            if (jar.name.endsWith('natives-x86_64.jar')) outputDir = file('libs/x86_64')
+            if (jar.name.endsWith('natives-x86.jar')) outputDir = file('libs/x86')
+            if (outputDir != null) {
+                copy {
+                    from zipTree(jar)
+                    into outputDir
+                    include 'libgdx.so'
+                }
+            }
+        }
+    }
+}
+
+tasks.matching { it.name.contains('merge') && it.name.contains('JniLibFolders') }.configureEach { packageTask ->
+    packageTask.dependsOn 'copyAndroidNatives'
+}
+
+tasks.whenTaskAdded { packageTask ->
+    if (packageTask.name.contains('merge') && packageTask.name.contains('NativeLibs')) {
+        packageTask.dependsOn 'copyAndroidNatives'
+    }
+}
+
+dependencies {
+    implementation project(':core')
+}

@@ -1,0 +1,36 @@
+plugins {
+    id 'application'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+sourceSets.main.java.srcDirs = ['src/main/java']
+sourceSets.main.resources.srcDirs = ['src/main/resources']
+
+application {
+    mainClass = 'com.medievaltd.desktop.DesktopLauncher'
+}
+
+dependencies {
+    implementation project(':core')
+}
+
+run {
+    workingDir = rootProject.file('assets').absolutePath
+    ignoreExitValue = true
+}
+
+task dist(type: Jar) {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': application.mainClass
+    }
+    dependsOn configurations.runtimeClasspath
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    with jar
+}
