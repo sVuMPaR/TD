@@ -93,7 +93,7 @@ public class MenuScreen extends ScreenAdapter {
             font.draw(batch, (i + 1) + ". " + lev.name, btn.x + 14, btn.y + 55);
             font.setColor(GameColors.UI_TEXT);
             font.getData().setScale(0.8f);
-            font.draw(batch, lev.description, btn.x + 14, btn.y + 28);
+            font.draw(batch, lev.description + " (" + lev.totalWaves + " волн)", btn.x + 14, btn.y + 28);
             font.getData().setScale(1f);
         }
 
