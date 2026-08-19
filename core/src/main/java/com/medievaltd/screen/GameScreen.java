@@ -240,10 +240,15 @@ public class GameScreen extends ScreenAdapter {
         font.getData().setScale(1f);
         font.setColor(GameColors.UI_TEXT);
         if (victory) {
-            layout.setText(font, "Награда: +" + session.getLevelReward() + " монет науки");
+            String reward = "Награда: +" + session.getLevelReward() + " монет науки";
+            layout.setText(font, reward);
             font.setColor(GameColors.UI_GOLD);
-            font.draw(batch, "Награда: +" + session.getLevelReward() + " монет науки",
-                W / 2f - layout.width / 2, H / 2f - 10);
+            font.draw(batch, reward, W / 2f - layout.width / 2, H / 2f - 10);
+        } else if (session.getDefeatReward() > 0) {
+            String reward = "Утешение: +" + session.getDefeatReward() + " монет науки";
+            layout.setText(font, reward);
+            font.setColor(GameColors.UI_GOLD);
+            font.draw(batch, reward, W / 2f - layout.width / 2, H / 2f - 10);
         }
         font.setColor(GameColors.UI_TEXT);
         String hint = victory ? "Коснитесь: Меню (ESC) | Исследования (ENTER)" : "Коснитесь или ESC — в меню";

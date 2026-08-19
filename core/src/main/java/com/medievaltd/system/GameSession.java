@@ -29,6 +29,8 @@ public class GameSession {
     private int lives;
     private Result result = Result.PLAYING;
     private int levelReward;
+    private boolean defeatRewarded;
+    private int defeatReward;
 
     public GameSession(GameLevel level, Difficulty difficulty, ResearchState research) {
         this.level = level;
@@ -43,12 +45,11 @@ public class GameSession {
         this.lives = difficulty.baseLives;
         this.waveManager = new WaveManager(level, difficulty);
 
-        // Level reward based on map index and difficulty
-        int baseReward = level.mapIndex * 120;
+        int baseReward = 50 + level.mapIndex * 40;
         this.levelReward = switch (difficulty) {
-            case EASY -> (int) (baseReward * 0.8f);
+            case EASY -> (int) (baseReward * 0.7f);
             case NORMAL -> baseReward;
-            case HARD -> (int) (baseReward * 1.4f);
+            case HARD -> (int) (baseReward * 1.5f);
         };
     }
 
@@ -96,6 +97,16 @@ public class GameSession {
         if (waveManager.isAllComplete() && enemies.isEmpty() && result == Result.PLAYING) {
             result = Result.VICTORY;
             research.addLevelReward(levelReward);
+        }
+
+        if (result == Result.DEFEAT && !defeatRewarded) {
+            defeatRewarded = true;
+            int wavesCleared = Math.max(0, waveManager.getCurrentWaveNumber() - 1);
+            int partialReward = (int) (levelReward * 0.3f * wavesCleared / (float) waveManager.getTotalWaves());
+            if (partialReward > 0) {
+                research.addLevelReward(partialReward);
+                defeatReward = partialReward;
+            }
         }
     }
 
@@ -223,4 +234,5 @@ public class GameSession {
     public int getLives() { return lives; }
     public Result getResult() { return result; }
     public int getLevelReward() { return levelReward; }
+    public int getDefeatReward() { return defeatReward; }
 }

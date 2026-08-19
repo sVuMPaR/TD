@@ -68,14 +68,16 @@ public class WaveManager {
 
         if (spawnTimer <= 0 && spawnedInGroup < adjustedCount) {
             int hp = difficulty.adjustHealth(entry.type.maxHealth);
-            if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 2.5f);
-            else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 5f);
-            else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 10f);
+            if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 3f);
+            else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 6f);
+            else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 12f);
 
-            // Survival scaling: +35% HP per 10-wave phase
+            // Map scaling: later maps are harder (requires research to push through)
             if (isSurvival) {
                 int phase = (currentWaveIndex) / 10;
                 hp = (int) (hp * (1f + phase * 0.35f));
+            } else if (mapIndex >= 2) {
+                hp = (int) (hp * (1f + (mapIndex - 1) * 0.25f));
             }
 
             Resistances res = WaveGenerator.generateResistances(entry.role, difficulty, rng);
