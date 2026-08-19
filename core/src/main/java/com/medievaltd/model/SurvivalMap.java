@@ -12,7 +12,7 @@ public class SurvivalMap {
         return new GameLevel(
             "Арена выживания",
             "100 волн. Бесконечная мощь врагов!",
-            400, 30, 99, TOTAL_WAVES,
+            500, 30, 99, TOTAL_WAVES,
             new float[]{0, 200, 200, 460, 460, 720, 720, 980, 980, 1280},
             new float[]{360, 360, 160, 160, 520, 520, 220, 220, 420, 420},
             List.of(

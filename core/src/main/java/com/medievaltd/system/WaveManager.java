@@ -68,9 +68,9 @@ public class WaveManager {
 
         if (spawnTimer <= 0 && spawnedInGroup < adjustedCount) {
             int hp = difficulty.adjustHealth(entry.type.maxHealth);
-            if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 3.5f);
-            else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 8f);
-            else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 15f);
+            if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 2.5f);
+            else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 5f);
+            else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 10f);
 
             // Survival scaling: +35% HP per 10-wave phase
             if (isSurvival) {

@@ -63,21 +63,22 @@ public class WaveGenerator {
         for (int w = 1; w <= totalWaves; w++) {
             boolean isBossWave = (w % 5 == 0);
             boolean isFinalWave = (w == totalWaves);
-            boolean isMiniBossWave = !isBossWave && !isFinalWave;
+            // Mini-boss on waves just before boss wave (x4, x9, x14...) and mid-section
+            boolean isMiniBossWave = !isBossWave && !isFinalWave && (w % 5 == 4 || w % 5 == 3);
 
             List<SpawnEntry> spawns = new ArrayList<>();
             float progress = (float) w / totalWaves;
-            int baseCount = 5 + (int) (progress * 12);
+            int baseCount = 4 + (int) (progress * 10);
 
             EnemyType mainType = enemyPool[rng.nextInt(enemyPool.length)];
-            spawns.add(new SpawnEntry(mainType, baseCount, 0.5f + (1f - progress) * 0.4f));
+            spawns.add(new SpawnEntry(mainType, baseCount, 0.6f + (1f - progress) * 0.4f));
 
-            if (progress > 0.25f && enemyPool.length > 1) {
+            if (progress > 0.3f && enemyPool.length > 1) {
                 EnemyType second;
                 int attempts = 0;
                 do { second = enemyPool[rng.nextInt(enemyPool.length)]; attempts++; }
                 while (second == mainType && attempts < 5);
-                if (second != mainType) spawns.add(new SpawnEntry(second, baseCount / 2, 0.7f));
+                if (second != mainType) spawns.add(new SpawnEntry(second, baseCount / 3, 0.8f));
             }
 
             if (isMiniBossWave) {
@@ -102,16 +103,11 @@ public class WaveGenerator {
         for (int w = 1; w <= totalWaves; w++) {
             boolean isBossWave = (w % 5 == 0);
             boolean isFinalWave = (w == totalWaves);
-            boolean isMiniBossWave = !isBossWave && !isFinalWave;
+            boolean isMiniBossWave = !isBossWave && !isFinalWave && (w % 5 == 4 || w % 5 == 3);
 
-            // Scaling: enemies get harder every 10 waves
-            int phase = (w - 1) / 10; // 0..9
-            float scaleFactor = 1f + phase * 0.35f;
-
+            int phase = (w - 1) / 10;
             List<SpawnEntry> spawns = new ArrayList<>();
-
-            // Enemy count scales with wave
-            int baseCount = 6 + w / 4;
+            int baseCount = 5 + w / 5;
             int typeCount = Math.min(1 + phase, 4);
 
             // Pick enemies from expanding pool
