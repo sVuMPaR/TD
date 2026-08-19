@@ -52,7 +52,7 @@ public class GameScreen extends ScreenAdapter {
     public GameScreen(MedievalTDGame game, int levelIndex, Difficulty difficulty) {
         this.game = game;
         GameLevel level = GameLevel.createLevels().get(levelIndex);
-        this.session = new GameSession(level, difficulty);
+        this.session = new GameSession(level, difficulty, game.getResearch());
         this.mapLevel = level.mapIndex;
         this.font = game.createFont(16);
 
@@ -192,6 +192,8 @@ public class GameScreen extends ScreenAdapter {
                 towerButtons[i].x + 8, towerButtons[i].y + 28);
         }
 
+        font.setColor(GameColors.UI_GOLD);
+        font.draw(batch, "Наука: " + game.getResearch().getGold(), 680, 50);
         font.setColor(GameColors.UI_TEXT);
         font.draw(batch, "Меню", menuButton.x + 28, menuButton.y + 26);
         font.draw(batch, "Улучш.", upgradeButton.x + 8, upgradeButton.y + 26);
@@ -236,12 +238,25 @@ public class GameScreen extends ScreenAdapter {
         font.draw(batch, victory ? "ПОБЕДА!" : "ПОРАЖЕНИЕ", W / 2f - layout.width / 2, H / 2f + 40);
         font.getData().setScale(1f);
         font.setColor(GameColors.UI_TEXT);
-        layout.setText(font, "Нажмите ESC или коснитесь для возврата в меню");
-        font.draw(batch, "Нажмите ESC или коснитесь для возврата в меню",
-            W / 2f - layout.width / 2, H / 2f - 20);
+        if (victory) {
+            layout.setText(font, "Награда: +" + session.getLevelReward() + " монет науки");
+            font.setColor(GameColors.UI_GOLD);
+            font.draw(batch, "Награда: +" + session.getLevelReward() + " монет науки",
+                W / 2f - layout.width / 2, H / 2f - 10);
+        }
+        font.setColor(GameColors.UI_TEXT);
+        String hint = victory ? "Коснитесь: Меню (ESC) | Исследования (ENTER)" : "Коснитесь или ESC — в меню";
+        layout.setText(font, hint);
+        font.draw(batch, hint, W / 2f - layout.width / 2, H / 2f - 50);
         batch.end();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || Gdx.input.justTouched()) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) || (Gdx.input.justTouched() && !victory)) {
             game.returnToMenu();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            game.openResearch();
+        }
+        if (victory && Gdx.input.justTouched()) {
+            game.openResearch();
         }
     }
 

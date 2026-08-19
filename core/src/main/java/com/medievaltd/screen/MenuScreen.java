@@ -118,6 +118,10 @@ public class MenuScreen extends ScreenAdapter {
         font.getData().setScale(0.75f);
         font.draw(batch, "Коснитесь уровня для начала", 60, 50);
         font.getData().setScale(1f);
+        font.setColor(GameColors.UI_GOLD);
+        font.draw(batch, "Монет науки: " + game.getResearch().getGold(), 900, 175);
+        font.setColor(GameColors.UI_TEXT);
+        font.draw(batch, "Исследования →", 900, 150);
         batch.end();
 
         if (Gdx.input.justTouched()) {
@@ -132,6 +136,10 @@ public class MenuScreen extends ScreenAdapter {
                 if (diffButtons[i].contains(pos.x, pos.y)) {
                     selectedDifficulty = diffs[i];
                 }
+            }
+            // Research button area
+            if (pos.x >= 900 && pos.x <= 1220 && pos.y >= 130 && pos.y <= 180) {
+                game.openResearch();
             }
         }
     }

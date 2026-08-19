@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.medievaltd.model.Difficulty;
 import com.medievaltd.model.DamageType;
 import com.medievaltd.model.EnemyRole;
 import com.medievaltd.model.EnemyType;
@@ -13,6 +14,7 @@ import com.medievaltd.util.Assets;
 public class Enemy {
     private final EnemyType type;
     private final EnemyRole role;
+    private final Difficulty difficulty;
     private final Resistances resistances;
     private final int maxHealth;
     private int health;
@@ -26,9 +28,10 @@ public class Enemy {
     private boolean blocked;
     private float blockedTimer;
 
-    public Enemy(EnemyType type, int adjustedHealth, EnemyRole role, Resistances resistances) {
+    public Enemy(EnemyType type, int adjustedHealth, EnemyRole role, Resistances resistances, Difficulty difficulty) {
         this.type = type;
         this.role = role;
+        this.difficulty = difficulty;
         this.resistances = resistances;
         this.maxHealth = adjustedHealth;
         this.health = adjustedHealth;
@@ -118,6 +121,12 @@ public class Enemy {
         if (!alive && !reachedEnd) return;
         Vector2 pos = getPosition(path, new Vector2());
         TextureRegion tex = type.getTexture(assets);
+        // Difficulty tint: Normal = normal, Hard = reddish overlay
+        if (difficulty == Difficulty.HARD) {
+            batch.setColor(1f, 0.65f, 0.65f, 1f);
+        } else if (difficulty == Difficulty.NORMAL) {
+            batch.setColor(0.85f, 0.9f, 1f, 1f);
+        }
         float baseSize = tex.getRegionWidth();
         float scale = switch (role) {
             case MINI_BOSS -> 1.4f;
@@ -127,6 +136,7 @@ public class Enemy {
         };
         float size = baseSize * scale;
         batch.draw(tex, pos.x - size / 2f, pos.y - size / 2f, size, size);
+        batch.setColor(1, 1, 1, 1);
 
         // Boss aura
         if (role != EnemyRole.NORMAL) {
@@ -186,6 +196,7 @@ public class Enemy {
         };
     }
 
+    public boolean isSlowed() { return slowTimer > 0; }
     public boolean isAlive() { return alive; }
     public boolean hasReachedEnd() { return reachedEnd; }
     public EnemyType getType() { return type; }

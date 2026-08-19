@@ -77,7 +77,7 @@ public class WaveManager {
                 }
             }
 
-            Enemy enemy = new Enemy(entry.type, hp, entry.role, res);
+            Enemy enemy = new Enemy(entry.type, hp, entry.role, res, difficulty);
             spawnQueue.add(enemy);
             spawnedInGroup++;
             spawnTimer = entry.interval;

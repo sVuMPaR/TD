@@ -5,12 +5,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.medievaltd.model.Difficulty;
+import com.medievaltd.research.ResearchState;
 import com.medievaltd.screen.GameScreen;
 import com.medievaltd.screen.MenuScreen;
+import com.medievaltd.screen.ResearchScreen;
 import com.medievaltd.util.Assets;
 
 public class MedievalTDGame extends Game {
     private Assets assets;
+    private final ResearchState research = new ResearchState();
 
     @Override
     public void create() {
@@ -45,5 +48,13 @@ public class MedievalTDGame extends Game {
 
     public void returnToMenu() {
         setScreen(new MenuScreen(this));
+    }
+
+    public void openResearch() {
+        setScreen(new ResearchScreen(this));
+    }
+
+    public ResearchState getResearch() {
+        return research;
     }
 }

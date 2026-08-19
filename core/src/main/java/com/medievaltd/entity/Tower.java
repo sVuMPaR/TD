@@ -6,6 +6,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.medievaltd.model.DamageType;
 import com.medievaltd.model.TempleUpgradeChoice;
 import com.medievaltd.model.TowerType;
+import com.medievaltd.research.ResearchState;
 import com.medievaltd.util.Assets;
 
 import java.util.ArrayList;
@@ -17,12 +18,13 @@ public class Tower {
     private int level = 1;
     private float fireCooldown;
     private TempleUpgradeChoice templeChoice;
+    private final ResearchState research;
 
-    // Barracks soldiers
     private final List<Soldier> soldiers = new ArrayList<>();
     private static final int MAX_SOLDIERS = 3;
 
-    public Tower(TowerType type, float x, float y) {
+    public Tower(TowerType type, float x, float y, ResearchState research) {
+        this.research = research;
         this.type = type;
         this.position = new Vector2(x, y);
         if (type == TowerType.BARRACKS) {
@@ -161,7 +163,9 @@ public class Tower {
     public TowerType getType() { return type; }
     public Vector2 getPosition() { return position; }
     public int getLevel() { return level; }
-    public float getRange() { return type.rangeAtLevel(level); }
+    public float getRange() {
+        return type.rangeAtLevel(level) * (research != null ? research.getRangeMultiplier() : 1f);
+    }
     public List<Soldier> getSoldiers() { return soldiers; }
 
     public static class Soldier {

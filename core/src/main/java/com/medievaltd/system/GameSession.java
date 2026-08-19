@@ -5,6 +5,7 @@ import com.medievaltd.entity.Enemy;
 import com.medievaltd.entity.Projectile;
 import com.medievaltd.entity.Tower;
 import com.medievaltd.model.*;
+import com.medievaltd.research.ResearchState;
 import com.medievaltd.util.Assets;
 
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ public class GameSession {
 
     private final GameLevel level;
     private final Difficulty difficulty;
+    private final ResearchState research;
     private final Vector2[] path;
     private final List<BuildSpot> buildSpots;
     private final List<Tower> towers = new ArrayList<>();
@@ -26,10 +28,12 @@ public class GameSession {
     private int gold;
     private int lives;
     private Result result = Result.PLAYING;
+    private int levelReward;
 
-    public GameSession(GameLevel level, Difficulty difficulty) {
+    public GameSession(GameLevel level, Difficulty difficulty, ResearchState research) {
         this.level = level;
         this.difficulty = difficulty;
+        this.research = research;
         this.path = level.getPathPoints();
         this.buildSpots = new ArrayList<>();
         for (BuildSpot spot : level.buildSpots) {
@@ -38,6 +42,14 @@ public class GameSession {
         this.gold = difficulty.adjustGold(level.startingGold);
         this.lives = difficulty.baseLives;
         this.waveManager = new WaveManager(level, difficulty);
+
+        // Level reward based on map index and difficulty
+        int baseReward = level.mapIndex * 120;
+        this.levelReward = switch (difficulty) {
+            case EASY -> (int) (baseReward * 0.8f);
+            case NORMAL -> baseReward;
+            case HARD -> (int) (baseReward * 1.4f);
+        };
     }
 
     public void update(float delta, Assets assets) {
@@ -48,7 +60,8 @@ public class GameSession {
         enemies.addAll(spawnQueue);
 
         for (Tower tower : towers) {
-            float dmgBonus = 0, spdBonus = 0;
+            float dmgBonus = research.getDamageMultiplier() - 1f;
+            float spdBonus = 1f - research.getSpeedMultiplier();
             for (Tower t : towers) {
                 if (t.getType() == TowerType.TEMPLE && t != tower) {
                     if (t.getPosition().dst(tower.getPosition()) <= t.getRange()) {
@@ -74,13 +87,15 @@ public class GameSession {
                 it.remove();
                 if (lives <= 0) { lives = 0; result = Result.DEFEAT; }
             } else if (!enemy.isAlive()) {
-                gold += enemy.getType().goldReward;
+                int reward = Math.round(enemy.getType().goldReward * research.getGoldMultiplier());
+                gold += reward;
                 it.remove();
             }
         }
 
-        if (waveManager.isAllComplete() && enemies.isEmpty()) {
+        if (waveManager.isAllComplete() && enemies.isEmpty() && result == Result.PLAYING) {
             result = Result.VICTORY;
+            research.addLevelReward(levelReward);
         }
     }
 
@@ -92,12 +107,10 @@ public class GameSession {
             if (!p.isActive()) { it.remove(); continue; }
 
             List<Enemy> hitEnemies = new ArrayList<>();
-
             for (Enemy enemy : enemies) {
                 if (!enemy.isAlive()) continue;
                 Vector2 ePos = enemy.getPosition(path, new Vector2());
                 float hitRadius = p.getSplashRadius() > 0 ? p.getSplashRadius() : 20f;
-
                 if (p.getPosition().dst(ePos) <= hitRadius) {
                     hitEnemies.add(enemy);
                     if (!p.isPiercing() && p.getSplashRadius() <= 0) break;
@@ -108,11 +121,9 @@ public class GameSession {
                 for (Enemy enemy : hitEnemies) {
                     applyProjectileHit(p, enemy);
                 }
-
                 if (p.isChaining()) {
                     handleChainLightning(p, hitEnemies.get(0), 2);
                 }
-
                 p.deactivate();
                 it.remove();
             }
@@ -127,21 +138,23 @@ public class GameSession {
             Vector2 curPos = current.getPosition(path, new Vector2());
             for (Enemy enemy : enemies) {
                 if (!enemy.isAlive() || enemy == current) continue;
-                Vector2 ePos = enemy.getPosition(path, new Vector2());
-                float d = curPos.dst(ePos);
-                if (d < bestDist) {
-                    bestDist = d;
-                    next = enemy;
-                }
+                float d = curPos.dst(enemy.getPosition(path, new Vector2()));
+                if (d < bestDist) { bestDist = d; next = enemy; }
             }
             if (next == null) break;
-            next.takeDamage(p.getDamage() / 2, p.getDamageType());
+            int dmg = applyResearchDamage(p.getDamage() / 2, p.getDamageType(), next);
+            next.takeDamage(dmg, p.getDamageType());
             current = next;
         }
     }
 
     private void applyProjectileHit(Projectile p, Enemy enemy) {
-        enemy.takeDamage(p.getDamage(), p.getDamageType());
+        int raw = applyResearchDamage(p.getDamage(), p.getDamageType(), enemy);
+        // Penetration: reduce effective resistance
+        float pen = research.getPenetration(p.getDamageType());
+        int finalDmg = (int) Math.max(1, raw * (1f + pen));
+        enemy.takeDamage(finalDmg, p.getDamageType());
+
         if (p.getDamageType() == DamageType.ICE) {
             enemy.applySlow(0.4f, 2.5f);
         }
@@ -150,12 +163,28 @@ public class GameSession {
         }
     }
 
+    private int applyResearchDamage(int base, DamageType dt, Enemy enemy) {
+        float mult = 1f;
+        mult *= research.getDamageMultiplier();
+        if (enemy.getRole() == EnemyRole.BOSS || enemy.getRole() == EnemyRole.MINI_BOSS
+            || enemy.getRole() == EnemyRole.FINAL_BOSS) {
+            mult *= research.getBonusVsBosses();
+        }
+        if (enemy.isBlocked()) {
+            mult *= research.getBonusVsBlocked();
+        }
+        if (enemy.isSlowed()) {
+            mult *= research.getBonusVsSlowed();
+        }
+        return Math.max(1, Math.round(base * mult));
+    }
+
     public boolean placeTower(BuildSpot spot, TowerType type) {
         int cost = type.freeToPlace ? 0 : type.baseCost;
         if (spot.occupied || gold < cost) return false;
         gold -= cost;
         spot.occupied = true;
-        towers.add(new Tower(type, spot.x, spot.y));
+        towers.add(new Tower(type, spot.x, spot.y, research));
         return true;
     }
 
@@ -193,4 +222,5 @@ public class GameSession {
     public int getGold() { return gold; }
     public int getLives() { return lives; }
     public Result getResult() { return result; }
+    public int getLevelReward() { return levelReward; }
 }
