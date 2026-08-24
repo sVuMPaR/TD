@@ -23,6 +23,13 @@ run {
     ignoreExitValue = true
 }
 
+task dumpSprites(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.medievaltd.desktop.SpriteDump'
+    workingDir = rootProject.file('assets').absolutePath
+    ignoreExitValue = true
+}
+
 task dist(type: Jar) {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {

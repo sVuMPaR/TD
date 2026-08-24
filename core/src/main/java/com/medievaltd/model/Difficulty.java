@@ -3,7 +3,7 @@ package com.medievaltd.model;
 public enum Difficulty {
     EASY("Лёгкая", 1.3f, 0.75f, 25, 0.8f),
     NORMAL("Средняя", 1.0f, 1.0f, 20, 1.0f),
-    HARD("Сложная", 0.8f, 1.3f, 14, 1.2f);
+    HARD("Сложная", 0.75f, 1.35f, 12, 1.2f);
 
     public final String displayName;
     public final float goldMultiplier;

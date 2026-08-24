@@ -57,9 +57,7 @@ public class BalanceSimulator {
                 int count = entry.role == EnemyRole.NORMAL ? diff.adjustCount(entry.count) : entry.count;
                 for (int e = 0; e < count; e++) {
                     int hp = diff.adjustHealth(entry.type.maxHealth);
-                    if (entry.role == EnemyRole.MINI_BOSS) hp = (int)(hp * 3f);
-                    else if (entry.role == EnemyRole.BOSS) hp = (int)(hp * 6f);
-                    else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int)(hp * 12f);
+                    hp = (int) (hp * entry.role.healthMultiplier);
                     if (level.mapIndex != 99 && level.mapIndex >= 2) {
                         hp = (int)(hp * (1f + (level.mapIndex - 1) * 0.25f));
                     }

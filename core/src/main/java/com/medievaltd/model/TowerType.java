@@ -17,9 +17,9 @@ public enum TowerType {
         "Цепная молния (3 цели)", false),
     ICE_TOWER("Ледяная башня", 110, 2.5f, 95f, 8, DamageType.ICE,
         "AoE заморозка, сильное замедление", false),
-    BARRACKS("Казарма", 100, 0f, 60f, 0, DamageType.PHYSICAL,
-        "Воины блокируют врагов на пути", false),
-    TEMPLE("Храм", 0, 0f, 120f, 0, DamageType.PHYSICAL,
+    BARRACKS("Казарма", 100, 0f, 100f, 0, DamageType.PHYSICAL,
+        "Воины держат врагов у дороги", false),
+    TEMPLE("Храм", 0, 0f, 320f, 0, DamageType.PHYSICAL,
         "Бафф соседних башен (бесплатно)", true);
 
     public final String displayName;
@@ -45,7 +45,7 @@ public enum TowerType {
 
     public int upgradeCost(int level) {
         if (this == TEMPLE) {
-            return 60 + level * 40;
+            return 60 + (level - 1) * 40;
         }
         return (int) (baseCost * (0.6f + level * 0.5f));
     }
@@ -71,6 +71,17 @@ public enum TowerType {
         return total / 2;
     }
 
+    public String statLine() {
+        if (this == TEMPLE) return "Радиус баффа: " + (int) baseRange;
+        if (this == BARRACKS) return "Патруль: " + (int) baseRange + "   Бойцы: 2-3";
+        return "Урон: " + baseDamage + "   Радиус: " + (int) baseRange;
+    }
+
+    public String fireLine() {
+        if (baseFireRate <= 0) return null;
+        return String.format(java.util.Locale.US, "Выстрел: %.1f с", baseFireRate);
+    }
+
     public boolean isElementalMagic() {
         return this == FIRE_MAGIC || this == ICE_MAGIC || this == LIGHTNING_MAGIC;
     }
@@ -78,6 +89,7 @@ public enum TowerType {
     public boolean isAvailableAtLevel(int mapLevel) {
         if (isElementalMagic()) return mapLevel >= 3;
         if (this == MAGIC) return mapLevel < 3;
+        if (this == BALLISTA || this == ICE_TOWER) return mapLevel >= 2;
         return true;
     }
 }

@@ -55,8 +55,12 @@ public class WaveManager {
         WaveDefinition wave = waves.get(currentWaveIndex);
         if (spawnGroupIndex >= wave.spawns.size()) {
             if (enemies.stream().noneMatch(Enemy::isAlive)) {
-                state = State.COMPLETE;
-                waveDelayTimer = wave.delayBeforeNext;
+                if (currentWaveIndex + 1 >= waves.size()) {
+                    state = State.ALL_COMPLETE;
+                } else {
+                    state = State.COMPLETE;
+                    waveDelayTimer = wave.delayBeforeNext;
+                }
             }
             return;
         }
@@ -68,9 +72,7 @@ public class WaveManager {
 
         if (spawnTimer <= 0 && spawnedInGroup < adjustedCount) {
             int hp = difficulty.adjustHealth(entry.type.maxHealth);
-            if (entry.role == EnemyRole.MINI_BOSS) hp = (int) (hp * 3f);
-            else if (entry.role == EnemyRole.BOSS) hp = (int) (hp * 6f);
-            else if (entry.role == EnemyRole.FINAL_BOSS) hp = (int) (hp * 12f);
+            hp = (int) (hp * entry.role.healthMultiplier);
 
             // Map scaling: later maps are harder (requires research to push through)
             if (isSurvival) {
@@ -101,6 +103,21 @@ public class WaveManager {
             spawnedInGroup = 0;
             spawnTimer = 0.5f;
         }
+    }
+
+    public int getCompletedWaveIndex() {
+        if (state == State.SPAWNING) return currentWaveIndex - 1;
+        return currentWaveIndex;
+    }
+
+    public void restoreCompleted(int completedWaveIndex) {
+        currentWaveIndex = Math.max(-1, Math.min(completedWaveIndex, waves.size() - 1));
+        spawnGroupIndex = 0;
+        spawnedInGroup = 0;
+        spawnTimer = 0;
+        waveDelayTimer = 0;
+        if (currentWaveIndex + 1 >= waves.size()) state = State.ALL_COMPLETE;
+        else state = State.WAITING;
     }
 
     public int getCurrentWaveNumber() { return currentWaveIndex + 1; }

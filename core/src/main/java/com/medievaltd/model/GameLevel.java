@@ -46,67 +46,70 @@ public class GameLevel {
     public static List<GameLevel> createLevels() {
         List<GameLevel> levels = new ArrayList<>();
 
+        float[] p1x = {0, 180, 180, 420, 420, 680, 680, 960, 960, 1280};
+        float[] p1y = {360, 360, 180, 180, 520, 520, 240, 240, 400, 400};
         levels.add(new GameLevel(
             "Застава Лесного Короля",
             "15 волн. Обучение основам обороны",
-            350, 20, 1, 15,
-            new float[]{0, 180, 180, 420, 420, 680, 680, 960, 960, 1280},
-            new float[]{360, 360, 180, 180, 520, 520, 240, 240, 400, 400},
-            List.of(
-                new BuildSpot(280, 280), new BuildSpot(280, 440),
-                new BuildSpot(520, 120), new BuildSpot(520, 360),
-                new BuildSpot(760, 160), new BuildSpot(760, 400),
-                new BuildSpot(880, 280), new BuildSpot(1040, 480),
-                new BuildSpot(100, 480), new BuildSpot(400, 300)
-            )
+            350, 20, 1, 15, p1x, p1y, spotsAlongRoad(p1x, p1y)
         ));
 
+        float[] p2x = {0, 320, 320, 560, 560, 800, 800, 1080, 1080, 1280};
+        float[] p2y = {200, 200, 480, 480, 160, 160, 440, 440, 280, 280};
         levels.add(new GameLevel(
             "Мост через пропасть",
             "20 волн. Баллиста и ледяная башня",
-            400, 20, 2, 20,
-            new float[]{0, 320, 320, 560, 560, 800, 800, 1080, 1080, 1280},
-            new float[]{200, 200, 480, 480, 160, 160, 440, 440, 280, 280},
-            List.of(
-                new BuildSpot(220, 320), new BuildSpot(420, 100),
-                new BuildSpot(480, 360), new BuildSpot(640, 520),
-                new BuildSpot(720, 240), new BuildSpot(920, 160),
-                new BuildSpot(960, 380), new BuildSpot(1120, 360),
-                new BuildSpot(160, 100), new BuildSpot(640, 300)
-            )
+            400, 20, 2, 20, p2x, p2y, spotsAlongRoad(p2x, p2y)
         ));
 
+        float[] p3x = {0, 200, 200, 500, 500, 750, 750, 1000, 1000, 1280};
+        float[] p3y = {500, 500, 200, 200, 450, 450, 150, 150, 350, 350};
         levels.add(new GameLevel(
             "Замёрзшее ущелье",
             "20 волн. Стихийная магия!",
-            420, 20, 3, 20,
-            new float[]{0, 200, 200, 500, 500, 750, 750, 1000, 1000, 1280},
-            new float[]{500, 500, 200, 200, 450, 450, 150, 150, 350, 350},
-            List.of(
-                new BuildSpot(300, 340), new BuildSpot(100, 380),
-                new BuildSpot(350, 120), new BuildSpot(600, 320),
-                new BuildSpot(630, 520), new BuildSpot(850, 300),
-                new BuildSpot(900, 100), new BuildSpot(1100, 250),
-                new BuildSpot(1100, 440), new BuildSpot(450, 520)
-            )
+            420, 20, 3, 20, p3x, p3y, spotsAlongRoad(p3x, p3y)
         ));
 
+        float[] p4x = {0, 160, 160, 400, 400, 640, 640, 900, 900, 1100, 1100, 1280};
+        float[] p4y = {400, 400, 600, 600, 200, 200, 500, 500, 300, 300, 500, 500};
         levels.add(new GameLevel(
             "Врата Тьмы",
             "25 волн. Финальное сражение!",
-            450, 18, 4, 25,
-            new float[]{0, 160, 160, 400, 400, 640, 640, 900, 900, 1100, 1100, 1280},
-            new float[]{400, 400, 600, 600, 200, 200, 500, 500, 300, 300, 500, 500},
-            List.of(
-                new BuildSpot(260, 480), new BuildSpot(260, 300),
-                new BuildSpot(500, 400), new BuildSpot(520, 120),
-                new BuildSpot(740, 340), new BuildSpot(740, 580),
-                new BuildSpot(980, 200), new BuildSpot(980, 420),
-                new BuildSpot(1180, 400), new BuildSpot(1050, 580),
-                new BuildSpot(360, 520), new BuildSpot(860, 120)
-            )
+            450, 18, 4, 25, p4x, p4y, spotsAlongRoad(p4x, p4y)
         ));
 
         return levels;
+    }
+
+    /** Places build slots just off the road so towers actually cover the path. */
+    public static List<BuildSpot> spotsAlongRoad(float[] pathX, float[] pathY) {
+        List<BuildSpot> spots = new ArrayList<>();
+        final float offset = 56f;
+        final float minDist = 86f;
+        for (int i = 0; i < pathX.length - 1; i++) {
+            float x1 = pathX[i], y1 = pathY[i];
+            float x2 = pathX[i + 1], y2 = pathY[i + 1];
+            float dx = x2 - x1, dy = y2 - y1;
+            float len = (float) Math.hypot(dx, dy);
+            if (len < 70f) continue;
+            float nx = -dy / len, ny = dx / len;
+            int samples = len > 220f ? 2 : 1;
+            for (int s = 0; s < samples; s++) {
+                float t = samples == 1 ? 0.5f : (s == 0 ? 0.32f : 0.68f);
+                float cx = x1 + dx * t;
+                float cy = y1 + dy * t;
+                tryAddSpot(spots, cx + nx * offset, cy + ny * offset, minDist);
+                tryAddSpot(spots, cx - nx * offset, cy - ny * offset, minDist);
+            }
+        }
+        return spots;
+    }
+
+    private static void tryAddSpot(List<BuildSpot> spots, float x, float y, float minDist) {
+        if (x < 70 || x > 1210 || y < 100 || y > 660) return;
+        for (BuildSpot s : spots) {
+            if (Vector2.dst(s.x, s.y, x, y) < minDist) return;
+        }
+        spots.add(new BuildSpot(x, y));
     }
 }

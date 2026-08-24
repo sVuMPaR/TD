@@ -2,18 +2,25 @@ package com.medievaltd.research;
 
 import com.medievaltd.model.DamageType;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
+import com.medievaltd.util.Smoke;
+
 import java.util.EnumMap;
 import java.util.Map;
 
 public class ResearchState {
     public static final int MAX_LEVEL = 10;
+    private static final String PREFS_NAME = "medievaltd-research";
 
     private int accumulatedGold;
     private final Map<ResearchId, Integer> levels = new EnumMap<>(ResearchId.class);
     private final ResearchTree tree = new ResearchTree();
 
     public void addLevelReward(int gold) {
+        if (Smoke.on()) return;
         accumulatedGold += gold;
+        persist();
     }
 
     public int getLevel(ResearchId id) {
@@ -50,7 +57,33 @@ public class ResearchState {
         if (!canUpgrade(id)) return false;
         accumulatedGold -= getUpgradeCost(id);
         levels.merge(id, 1, Integer::sum);
+        persist();
         return true;
+    }
+
+    public void load() {
+        if (Gdx.app == null) return;
+        Preferences prefs = Gdx.app.getPreferences(PREFS_NAME);
+        accumulatedGold = prefs.getInteger("scienceGold", 0);
+        levels.clear();
+        for (ResearchId id : ResearchId.values()) {
+            int lv = prefs.getInteger("res_" + id.name(), 0);
+            if (lv > 0) levels.put(id, Math.min(lv, MAX_LEVEL));
+        }
+    }
+
+    public void save() {
+        persist();
+    }
+
+    private void persist() {
+        if (Gdx.app == null) return;
+        Preferences prefs = Gdx.app.getPreferences(PREFS_NAME);
+        prefs.putInteger("scienceGold", accumulatedGold);
+        for (ResearchId id : ResearchId.values()) {
+            prefs.putInteger("res_" + id.name(), getLevel(id));
+        }
+        prefs.flush();
     }
 
     public int getGold() {
@@ -81,6 +114,11 @@ public class ResearchState {
 
     public float getRangeMultiplier() {
         return 1f + scaled(ResearchId.RANGE_BOOST, 0.10f);
+    }
+
+    /** Hook for later "increased accuracy" research. 1 = no bonus. */
+    public float getAccuracyMultiplier() {
+        return 1f;
     }
 
     public float getGoldMultiplier() {

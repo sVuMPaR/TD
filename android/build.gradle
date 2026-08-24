@@ -1,6 +1,6 @@
 android {
     namespace 'com.medievaltd.android'
-    compileSdk 34
+    compileSdk 36
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -12,7 +12,10 @@ android {
             jniLibs.srcDirs = ['libs']
         }
     }
-    packagingOptions {
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
         resources {
             excludes += ['META-INF/robovm/ios/robovm.xml']
         }
@@ -20,7 +23,7 @@ android {
     defaultConfig {
         applicationId 'com.medievaltd.android'
         minSdkVersion 21
-        targetSdkVersion 34
+        targetSdkVersion 35
         versionCode 1
         versionName '1.0.0'
     }
@@ -47,7 +50,7 @@ tasks.register('copyAndroidNatives') {
                 copy {
                     from zipTree(jar)
                     into outputDir
-                    include 'libgdx.so'
+                    include '*.so'
                 }
             }
         }

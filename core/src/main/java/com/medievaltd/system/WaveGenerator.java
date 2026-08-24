@@ -63,8 +63,7 @@ public class WaveGenerator {
         for (int w = 1; w <= totalWaves; w++) {
             boolean isBossWave = (w % 5 == 0);
             boolean isFinalWave = (w == totalWaves);
-            // Mini-boss on waves just before boss wave (x4, x9, x14...) and mid-section
-            boolean isMiniBossWave = !isBossWave && !isFinalWave && (w % 5 == 4 || w % 5 == 3);
+            boolean isMiniBossWave = !isBossWave && !isFinalWave && w > 1;
 
             List<SpawnEntry> spawns = new ArrayList<>();
             float progress = (float) w / totalWaves;
@@ -103,7 +102,7 @@ public class WaveGenerator {
         for (int w = 1; w <= totalWaves; w++) {
             boolean isBossWave = (w % 5 == 0);
             boolean isFinalWave = (w == totalWaves);
-            boolean isMiniBossWave = !isBossWave && !isFinalWave && (w % 5 == 4 || w % 5 == 3);
+            boolean isMiniBossWave = !isBossWave && !isFinalWave && w > 1;
 
             int phase = (w - 1) / 10;
             List<SpawnEntry> spawns = new ArrayList<>();

@@ -4,7 +4,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.2'
+        classpath 'com.android.tools.build:gradle:8.9.1'
     }
 }
 
@@ -12,15 +12,19 @@ allprojects {
     apply plugin: 'eclipse'
     apply plugin: 'idea'
 
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
     version = '1.0.0'
     ext {
         appName = 'Medieval TD'
-        gdxVersion = '1.12.1'
+        gdxVersion = '1.14.2'
         roboVMVersion = '2.3.20'
         box2DLightsVersion = '1.5'
         ashleyVersion = '1.7.4'
         aiVersion = '1.8.2'
-        gdxControllersVersion = '2.2.1'
+        gdxControllersVersion = '2.2.4'
     }
 
     repositories {

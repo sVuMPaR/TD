@@ -41,6 +41,13 @@ public class ResearchScreen extends ScreenAdapter {
         titleFont = game.createFont(30);
         font = game.createFont(14);
         small = game.createFont(11);
+        camera.position.set(W / 2f, H / 2f, 0);
+    }
+
+    @Override
+    public void show() {
+        camera.position.set(W / 2f, H / 2f, 0);
+        camera.update();
     }
 
     @Override
@@ -52,7 +59,6 @@ public class ResearchScreen extends ScreenAdapter {
 
         Vector2 mouse = viewport.unproject(new Vector2(Gdx.input.getX(), Gdx.input.getY()));
 
-        // Connection lines
         shapes.setProjectionMatrix(camera.combined);
         shapes.begin(ShapeRenderer.ShapeType.Line);
         for (ResearchNode node : tree.all()) {
@@ -70,7 +76,6 @@ public class ResearchScreen extends ScreenAdapter {
         }
         shapes.end();
 
-        // Node boxes
         shapes.begin(ShapeRenderer.ShapeType.Filled);
         for (ResearchNode node : tree.all()) {
             int lv = research.getLevel(node.id);
@@ -85,7 +90,6 @@ public class ResearchScreen extends ScreenAdapter {
             else shapes.setColor(0.14f, 0.12f, 0.1f, 1f);
             shapes.rect(node.treeX, node.treeY, NW, NH);
 
-            // Border
             Color bc = sel ? GameColors.UI_GOLD :
                 max ? new Color(0.3f, 0.7f, 0.3f, 1f) :
                     canUp ? GameColors.UI_BORDER : new Color(0.25f, 0.22f, 0.18f, 1f);
@@ -95,7 +99,6 @@ public class ResearchScreen extends ScreenAdapter {
             shapes.rect(node.treeX, node.treeY, 2, NH);
             shapes.rect(node.treeX + NW - 2, node.treeY, 2, NH);
 
-            // Level bar (10 segments)
             if (lv > 0) {
                 float barY = node.treeY + 4;
                 float barX = node.treeX + 6;
@@ -107,9 +110,25 @@ public class ResearchScreen extends ScreenAdapter {
                 }
             }
         }
+
+        if (selected != null) {
+            shapes.setColor(GameColors.UI_PANEL);
+            shapes.rect(W - 300, 80, 290, 310);
+            shapes.setColor(GameColors.UI_BORDER);
+            shapes.rect(W - 300, 80, 290, 2);
+            shapes.rect(W - 300, 388, 290, 2);
+            shapes.rect(W - 300, 80, 2, 310);
+            shapes.rect(W - 12, 80, 2, 310);
+            if (research.canUpgrade(selected.id)) {
+                shapes.setColor(0.28f, 0.52f, 0.22f, 1f);
+                shapes.rect(W - 288, 96, 150, 34);
+            }
+        }
+
+        shapes.setColor(GameColors.UI_PANEL);
+        shapes.rect(W - 180, 20, 160, 42);
         shapes.end();
 
-        // Text
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         titleFont.setColor(GameColors.UI_GOLD);
@@ -138,49 +157,29 @@ public class ResearchScreen extends ScreenAdapter {
             }
         }
 
-        // Sidebar
         if (selected != null) {
-            renderSidebar();
+            drawSidebarText();
         }
 
-        // Back button bg
-        batch.end();
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(GameColors.UI_PANEL);
-        shapes.rect(W - 180, 20, 160, 42);
-        shapes.end();
-        batch.begin();
         font.setColor(GameColors.UI_TEXT);
-        font.draw(batch, "← Меню", W - 168, 48);
+        font.draw(batch, "< Меню", W - 168, 48);
         batch.end();
 
         handleInput(mouse);
     }
 
-    private void renderSidebar() {
+    private void drawSidebarText() {
         ResearchNode n = selected;
         int lv = research.getLevel(n.id);
         boolean canUp = research.canUpgrade(n.id);
         boolean max = research.isMaxed(n.id);
 
-        shapes.begin(ShapeRenderer.ShapeType.Filled);
-        shapes.setColor(GameColors.UI_PANEL);
-        shapes.rect(W - 300, 80, 290, 310);
-        shapes.setColor(GameColors.UI_BORDER);
-        shapes.rect(W - 300, 80, 290, 2);
-        shapes.rect(W - 300, 388, 290, 2);
-        shapes.rect(W - 300, 80, 2, 310);
-        shapes.rect(W - 12, 80, 2, 310);
-        shapes.end();
-
-        batch.begin();
         font.setColor(GameColors.UI_GOLD);
         font.draw(batch, n.name, W - 288, 376);
         small.setColor(GameColors.UI_TEXT);
         small.draw(batch, n.description, W - 288, 352);
         small.draw(batch, n.maxEffect, W - 288, 334);
 
-        // Current value
         float pct = (float) lv / ResearchState.MAX_LEVEL * 100f;
         font.setColor(GameColors.UI_TEXT);
         font.draw(batch, "Уровень: " + lv + " / " + ResearchState.MAX_LEVEL + " (" + (int) pct + "%)", W - 288, 308);
@@ -198,7 +197,7 @@ public class ResearchScreen extends ScreenAdapter {
                 ResearchNode rn = tree.get(req);
                 boolean done = research.isUnlocked(req);
                 small.setColor(done ? new Color(0.4f, 0.9f, 0.4f, 1f) : GameColors.UI_HEALTH);
-                if (rn != null) small.draw(batch, (done ? "✓ " : "✗ ") + rn.name, W - 280, ry);
+                if (rn != null) small.draw(batch, (done ? "+ " : "x ") + rn.name, W - 280, ry);
                 ry -= 16;
             }
         }
@@ -207,19 +206,12 @@ public class ResearchScreen extends ScreenAdapter {
             font.setColor(new Color(0.4f, 1f, 0.4f, 1f));
             font.draw(batch, "Максимум!", W - 288, 140);
         } else if (canUp) {
-            batch.end();
-            shapes.begin(ShapeRenderer.ShapeType.Filled);
-            shapes.setColor(0.28f, 0.52f, 0.22f, 1f);
-            shapes.rect(W - 288, 96, 150, 34);
-            shapes.end();
-            batch.begin();
             font.setColor(GameColors.UI_TEXT);
             font.draw(batch, "Улучшить (" + research.getUpgradeCost(n.id) + "M)", W - 284, 120);
         } else {
             font.setColor(GameColors.UI_HEALTH);
-            font.draw(batch, max ? "" : "Недоступно", W - 288, 120);
+            font.draw(batch, "Недоступно", W - 288, 120);
         }
-        batch.end();
     }
 
     private boolean hitTest(ResearchNode node, Vector2 pos) {
@@ -228,7 +220,9 @@ public class ResearchScreen extends ScreenAdapter {
     }
 
     private void handleInput(Vector2 mouse) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)
+            || Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
+            game.getSfx().click();
             game.returnToMenu();
             return;
         }
@@ -236,6 +230,7 @@ public class ResearchScreen extends ScreenAdapter {
 
         // Back button
         if (mouse.x >= W - 180 && mouse.x <= W - 20 && mouse.y >= 20 && mouse.y <= 62) {
+            game.getSfx().click();
             game.returnToMenu();
             return;
         }
@@ -244,6 +239,7 @@ public class ResearchScreen extends ScreenAdapter {
         if (selected != null && research.canUpgrade(selected.id)) {
             if (mouse.x >= W - 288 && mouse.x <= W - 138 && mouse.y >= 96 && mouse.y <= 130) {
                 research.upgrade(selected.id);
+                game.getSfx().upgrade();
                 return;
             }
         }
@@ -252,8 +248,10 @@ public class ResearchScreen extends ScreenAdapter {
             if (hitTest(node, mouse)) {
                 if (node == selected && research.canUpgrade(node.id)) {
                     research.upgrade(node.id);
+                    game.getSfx().upgrade();
                 } else {
                     selected = node;
+                    game.getSfx().click();
                 }
                 return;
             }
@@ -261,7 +259,7 @@ public class ResearchScreen extends ScreenAdapter {
     }
 
     @Override
-    public void resize(int w, int h) { viewport.update(w, h); }
+    public void resize(int w, int h) { viewport.update(w, h, true); }
 
     @Override
     public void dispose() {

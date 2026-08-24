@@ -6,6 +6,11 @@ import com.medievaltd.MedievalTDGame;
 
 public class DesktopLauncher {
     public static void main(String[] args) {
+        for (String arg : args) {
+            if ("--smoke".equals(arg)) {
+                System.setProperty("medievaltd.smoke", "1");
+            }
+        }
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle("Medieval TD");
         config.setWindowedMode(1280, 720);
