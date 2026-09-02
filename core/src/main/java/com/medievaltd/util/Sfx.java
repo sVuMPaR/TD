@@ -55,7 +55,8 @@ public class Sfx {
             case BALLISTA -> 0.85f;
             case MAGIC, LIGHTNING_MAGIC -> 1.35f;
             case FIRE_MAGIC -> 1.05f;
-            case ICE_MAGIC, ICE_TOWER -> 1.15f;
+            case ICE_MAGIC -> 1.28f;
+            case ICE_TOWER -> 0.82f;
             default -> 1f;
         };
         play(shoot, 0.28f, pitch);

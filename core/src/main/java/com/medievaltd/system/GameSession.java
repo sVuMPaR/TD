@@ -258,7 +258,7 @@ public class GameSession {
         enemy.takeDamage(finalDmg, p.getDamageType());
 
         if (p.getSlowMultiplier() < 1f) {
-            enemy.applySlow(p.getSlowMultiplier(), 2.5f);
+            enemy.applySlow(p.getSlowMultiplier(), p.getSlowDuration() > 0f ? p.getSlowDuration() : 2.5f);
         }
         if (p.getDamageType() == DamageType.FIRE) {
             enemy.applyDot(8f, 3f);

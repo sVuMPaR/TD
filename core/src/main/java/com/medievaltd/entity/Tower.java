@@ -75,9 +75,11 @@ public class Tower {
             case BALLISTA -> Projectile.bolt(new Vector2(position), target, damage, assets);
             case MAGIC -> Projectile.magic(new Vector2(position), target, damage, DamageType.MAGIC, assets);
             case FIRE_MAGIC -> Projectile.magic(new Vector2(position), target, damage, DamageType.FIRE, assets);
-            case ICE_MAGIC -> Projectile.magic(new Vector2(position), target, damage, DamageType.ICE, assets, 0.4f);
+            case ICE_MAGIC -> Projectile.magic(new Vector2(position), target, damage, DamageType.ICE, assets,
+                type.iceSlow(), type.iceSplash(), type.iceSlowTime());
             case LIGHTNING_MAGIC -> Projectile.magic(new Vector2(position), target, damage, DamageType.LIGHTNING, assets);
-            case ICE_TOWER -> Projectile.magic(new Vector2(position), target, damage, DamageType.ICE, assets, 0.3f);
+            case ICE_TOWER -> Projectile.magic(new Vector2(position), target, damage, DamageType.ICE, assets,
+                type.iceSlow(), type.iceSplash(), type.iceSlowTime());
             default -> null;
         };
         if (proj != null) projectiles.add(proj);

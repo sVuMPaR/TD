@@ -729,6 +729,15 @@ public class GameScreen extends ScreenAdapter {
             font.draw(batch, "Урон: " + t.currentDamage() + "   Радиус: " + (int) t.getRange(), x, y);
             y -= 20;
             font.draw(batch, String.format(java.util.Locale.US, "Выстрел: %.2f с", t.currentFireRate()), x, y);
+            if (type == TowerType.ICE_TOWER || type == TowerType.ICE_MAGIC) {
+                y -= 20;
+                int pct = Math.round((1f - type.iceSlow()) * 100);
+                if (type == TowerType.ICE_TOWER) {
+                    font.draw(batch, "Пачка: -" + pct + "%   область " + (int) type.iceSplash(), x, y);
+                } else {
+                    font.draw(batch, "Одна цель: -" + pct + "%   " + type.iceSlowTime() + " с", x, y);
+                }
+            }
         }
         y -= 22;
         font.setColor(GameColors.UI_GOLD);
