@@ -11,12 +11,12 @@ public enum TowerType {
         "Универсальный магический урон", false),
     FIRE_MAGIC("Огонь", 140, 2.0f, 100f, 14, DamageType.FIRE,
         "Поджигает — урон со временем", false),
-    ICE_MAGIC("Лёд", 140, 2.2f, 105f, 12, DamageType.ICE,
-        "Заморозка области, замедление", false),
+    ICE_MAGIC("Маг льда", 140, 1.9f, 130f, 16, DamageType.ICE,
+        "Одна цель: сильный удар и долгое замедление", false),
     LIGHTNING_MAGIC("Молния", 160, 1.6f, 115f, 22, DamageType.LIGHTNING,
         "Цепная молния (3 цели)", false),
-    ICE_TOWER("Ледяная башня", 110, 2.5f, 95f, 8, DamageType.ICE,
-        "AoE заморозка, сильное замедление", false),
+    ICE_TOWER("Ледяная башня", 110, 2.4f, 92f, 7, DamageType.ICE,
+        "Морозит пачку вокруг удара. Урона мало.", false),
     BARRACKS("Казарма", 100, 0f, 100f, 0, DamageType.PHYSICAL,
         "Воины держат врагов у дороги", false),
     TEMPLE("Храм", 0, 0f, 320f, 0, DamageType.PHYSICAL,
@@ -74,7 +74,30 @@ public enum TowerType {
     public String statLine() {
         if (this == TEMPLE) return "Радиус баффа: " + (int) baseRange;
         if (this == BARRACKS) return "Патруль: " + (int) baseRange + "   Бойцы: 2-3";
+        if (this == ICE_TOWER) return "Урон: " + baseDamage + "   Радиус: " + (int) baseRange + "   Обл.: " + (int) iceSplash();
+        if (this == ICE_MAGIC) return "Урон: " + baseDamage + "   Радиус: " + (int) baseRange + "   Одна цель";
         return "Урон: " + baseDamage + "   Радиус: " + (int) baseRange;
+    }
+
+    /** Pack freeze radius. Magus has none. */
+    public float iceSplash() {
+        return this == ICE_TOWER ? 56f : 0f;
+    }
+
+    public float iceSlow() {
+        return switch (this) {
+            case ICE_TOWER -> 0.40f;
+            case ICE_MAGIC -> 0.35f;
+            default -> 1f;
+        };
+    }
+
+    public float iceSlowTime() {
+        return switch (this) {
+            case ICE_TOWER -> 2.8f;
+            case ICE_MAGIC -> 3.6f;
+            default -> 0f;
+        };
     }
 
     public String fireLine() {
